@@ -1,0 +1,137 @@
+object Form1: TForm1
+  Left = 305
+  Height = 495
+  Top = 250
+  Width = 920
+  Caption = 'Form1'
+  ClientHeight = 495
+  ClientWidth = 920
+  LCLVersion = '4.99.0.0'
+  object Edit1: TEdit
+    Left = 37
+    Height = 23
+    Top = 47
+    Width = 483
+    TabOrder = 0
+    Text = 'Edit1'
+  end
+  object btnNormalize: TButton
+    Left = 600
+    Height = 25
+    Top = 47
+    Width = 75
+    Caption = 'Normalize'
+    TabOrder = 1
+    OnClick = btnNormalizeClick
+  end
+  object edNFC: TEdit
+    Left = 189
+    Height = 23
+    Top = 101
+    Width = 544
+    TabOrder = 2
+  end
+  object edNFD: TEdit
+    Left = 189
+    Height = 23
+    Top = 168
+    Width = 544
+    TabOrder = 3
+  end
+  object edNFKC: TEdit
+    Left = 189
+    Height = 23
+    Top = 248
+    Width = 544
+    TabOrder = 4
+  end
+  object edNFKD: TEdit
+    Left = 189
+    Height = 23
+    Top = 312
+    Width = 544
+    TabOrder = 5
+  end
+  object edNFKC_casefold: TEdit
+    Left = 189
+    Height = 23
+    Top = 376
+    Width = 544
+    TabOrder = 6
+  end
+  object lbNFC: TLabel
+    Left = 189
+    Height = 15
+    Top = 133
+    Width = 544
+    AutoSize = False
+    Caption = 'lbNFC'
+  end
+  object lbNFD: TLabel
+    Left = 189
+    Height = 15
+    Top = 208
+    Width = 544
+    AutoSize = False
+    Caption = 'lbNFD'
+  end
+  object lbNFKC: TLabel
+    Left = 189
+    Height = 15
+    Top = 280
+    Width = 544
+    AutoSize = False
+    Caption = 'lbNFKC'
+  end
+  object lbNFKD: TLabel
+    Left = 189
+    Height = 15
+    Top = 344
+    Width = 544
+    AutoSize = False
+    Caption = 'lbNFKD'
+  end
+  object lbNFKC_casefold: TLabel
+    Left = 189
+    Height = 15
+    Top = 408
+    Width = 544
+    AutoSize = False
+    Caption = 'lbNFKC_casefold'
+  end
+  object Label1: TLabel
+    Left = 37
+    Height = 15
+    Top = 109
+    Width = 23
+    Caption = 'NFC'
+  end
+  object Label2: TLabel
+    Left = 37
+    Height = 15
+    Top = 176
+    Width = 23
+    Caption = 'NFD'
+  end
+  object Label3: TLabel
+    Left = 37
+    Height = 15
+    Top = 256
+    Width = 30
+    Caption = 'NFKC'
+  end
+  object Label4: TLabel
+    Left = 37
+    Height = 15
+    Top = 320
+    Width = 30
+    Caption = 'NFKD'
+  end
+  object Label5: TLabel
+    Left = 37
+    Height = 15
+    Top = 384
+    Width = 80
+    Caption = 'NFKC case fold'
+  end
+end

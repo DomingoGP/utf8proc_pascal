@@ -1,0 +1,150 @@
+program case_grapheme;
+
+// compare with libgrapheme functions
+// Main diferences in surrogate pairs libgrapheme returns $FFFD REPLACEMENT CHARACTER
+// utf8proc returns the char codepoint.
+// There are 1024 characters reserved as high surrogates (U+D800 through U+DBFF)
+// and 1024 reserved as low surrogates (U+DC00 through U+DFFF)
+
+
+{$ifdef FPC}
+{$mode delphi}
+{$endif}   
+
+uses
+  SysUtils,
+  test,
+  Strings,
+  LazUtf8,
+  grapheme_case,
+  utf8proc in '../utf8proc.pas';
+
+type
+
+  wint_t = utf8proc_int32_t;
+
+var
+
+  tests: integer;
+  error, better: integer;
+
+
+  c: utf8proc_int32_t;
+  l: utf8proc_int32_t;
+  u: utf8proc_int32_t;
+  t: utf8proc_int32_t;
+  s1, s2: pansichar;
+  l0, u0: wint_t;
+
+
+function towlower(c: wint_t): wint_t;
+var
+  r: ansistring;
+  cp: int32;
+begin
+  Result := c;
+  //r:=AnsiLowerCase(PAnsiChar(unicodeToUTF8(c)));
+  r := graphemeLowerCase(pansichar(unicodeToUTF8(c)));
+  if utf8proc_iterate(pansichar(r), length(r), @cp) > 0 then
+    Result := cp;
+end;
+
+
+function towupper(c: wint_t): wint_t;
+var
+  r: ansistring;
+  cp: int32;
+begin
+  Result := c;
+  //r:=AnsiUpperCase(PAnsiChar(unicodeToUTF8(c)));
+  r := graphemeUpperCase(pansichar(unicodeToUTF8(c)));
+  if utf8proc_iterate(pansichar(r), length(r), @cp) > 0 then
+    Result := cp;
+end;
+
+
+//  too many mismatches
+//function towupper(c:wint_t):wint_t;cdecl; external 'msvcr120.dll';
+//function towlower(c:wint_t):wint_t;cdecl; external 'msvcr120.dll';
+
+begin
+  lineno := 0;
+  better := 0;
+  failures := 0;
+
+  tests := 0;
+  error := 0;
+
+  {* some simple sanity tests of the character widths *}
+  c := 0;
+  while c <= $110000 do
+  begin
+    l := utf8proc_tolower(c);
+    u := utf8proc_toupper(c);
+    t := utf8proc_totitle(c);
+
+    check((l = c) or utf8proc_codepoint_valid(l), 'invalid tolower', []);
+    check((u = c) or utf8proc_codepoint_valid(u), 'invalid toupper', []);
+    check((t = c) or utf8proc_codepoint_valid(t), 'invalid totitle', []);
+
+    if utf8proc_codepoint_valid(c) and ((l = u) <> (l = t)) and
+      {* Unicode 11: Georgian Mkhedruli chars have uppercase but no titlecase. *} not
+      ((((c >= $10d0) and (c <= $10fa)) or (c >= ($10fd and Ord(c <= $10ff)))) and (l <> u)) then
+    begin
+      writeln(Format('unexpected titlecase %x for lowercase %x / uppercase %x', [t, l, c]));
+      Inc(error);
+    end;
+
+    if ((sizeof(wint_t) > 2) or ((c < (1 shl 16)) and (u < (1 shl 16)) and (l < (1 shl 16)))) then
+    begin
+      l0 := towlower(wint_t(c));
+      u0 := towupper(wint_t(c));
+
+            {* OS unicode tables may be out of date.  But if they
+               do have a lower/uppercase mapping, hopefully it
+               is correct? *}
+      if (l0 <> wint_t(c)) and (l0 <> wint_t(l)) then
+      begin
+        writeln(Format('MISMATCH %x != grapheme towlower(%x) = %x', [l, c, l0]));
+        Inc(error);
+      end
+      else if (l0 <> wint_t(l)) then
+      begin {* often true for out-of-date OS unicode *}
+        Inc(better);
+        {* printf("%x != towlower(%x) = %x\n", l, c, l0); *}
+      end;
+      if (u0 <> wint_t(c)) and (u0 <> wint_t(u)) then
+      begin
+        writeln(Format('MISMATCH %x != grapheme towupper(%x) = %x', [u, c, u0]));
+        Inc(error);
+      end
+      else if (u0 <> wint_t(u)) then
+      begin {* often true for out-of-date OS unicode *}
+        Inc(better);
+        {* printf("%x != towupper(%x) = %x\n", u, c, u0); *}
+      end;
+    end;
+
+    Inc(c);
+  end;
+
+  check(error = 0, 'utf8proc case conversion FAILED %d tests.', [error]);
+
+  {* issue #130 *}
+  check((utf8proc_toupper($00df) = $1e9e) and (utf8proc_totitle($00df) = $1e9e) and (utf8proc_tolower($00df) = $00df) and
+    (utf8proc_tolower($1e9e) = $00df) and (utf8proc_toupper($1e9e) = $1e9e),
+    'incorrect $00df/$1e9e case conversions', []);
+  s1 := utf8proc_NFKC_Casefold(#$c3#$9f#$00);
+  s2 := utf8proc_NFKC_Casefold(#$e1#$ba#$9e#$00);
+  check((strcomp(s1, 'ss') = 0) and (strcomp(s2, 'ss') = 0),
+    'incorrect $00df/$1e9e casefold normalization', []);
+  utf8proc_free(s1);
+  utf8proc_free(s2);
+
+  writeln(Format('More up-to-date than OS unicode tables for %d tests.', [better]));
+  writeln('utf8proc case conversion tests SUCCEEDED.');
+
+  writeln('');
+  writeln('Press enter to exit');
+  readln;
+end.

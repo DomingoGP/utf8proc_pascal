@@ -1,4 +1,17 @@
 # utf8proc
+
+
+ Pascal port of the utf8proc library plus some additions, see pascal folder.
+
+ See
+
+ [https://github.com/JuliaStrings/utf8proc](https://github.com/JuliaStrings/utf8proc)
+
+  [http://juliastrings.github.io/utf8proc/](http://juliastrings.github.io/utf8proc/)
+
+
+
+
 [![CI](https://github.com/NanoComp/meep/actions/workflows/build-ci.yml/badge.svg)](https://github.com/JuliaStrings/utf8proc/actions/workflows/build-ci.yml)
 [![AppVeyor status](https://ci.appveyor.com/api/projects/status/ivaa0v6ikxrmm5r6?svg=true)](https://ci.appveyor.com/project/StevenGJohnson/utf8proc)
 
