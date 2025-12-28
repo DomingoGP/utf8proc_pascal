@@ -104,8 +104,8 @@ const
   { The MINOR version number (increased when new functionality is added in a backwards-compatible manner).}
   UTF8PROC_VERSION_MINOR = 11;
   { The PATCH version (increased for fixes that do not change the API).}
-  UTF8PROC_VERSION_PATCH = 0;
-  UTF8PROC_VERSION_STR = '2.11.0';
+  UTF8PROC_VERSION_PATCH = 2;
+  UTF8PROC_VERSION_STR = '2.11.2';
   UTF8PROC_UNICODE_VERSION_STR = '17.0.0';
 
 type
@@ -818,6 +818,10 @@ function utf8proc_category_string(c: utf8proc_int32_t): ansistring;
  *
  * @note The memory of the new UTF-8 string will have been allocated
  * with `malloc`, and should therefore be deallocated with `free`.
+ *
+ * @note `utf8proc_map` simply calls `utf8proc_decompose` followed by `utf8proc_reencode`,
+ * and applications requiring greater control over memory allocation should instead call
+ * those two functions directly.
  }
 
 
@@ -1613,7 +1617,19 @@ begin
     while pos < (wpos - 1) do
     begin
       uc1 := buffer[pos];
+      if uc1 < 0 then
+      begin
+        {/* skip grapheme break */}
+        Inc(pos);
+        continue;
+      end;
       uc2 := buffer[pos + 1];
+      if uc2 < 0 then
+      begin
+        {/* cannot recombine; skip grapheme break */}
+        Inc(pos,2);
+        continue;
+      end;
       property1 := unsafe_get_property(uc1);
       property2 := unsafe_get_property(uc2);
       if (property1^.combining_class > property2^.combining_class) and (property2^.combining_class > 0) then
@@ -1742,7 +1758,7 @@ begin
         if (hangul_sindex >= 0) and (hangul_sindex < UTF8PROC_HANGUL_SCOUNT) and ((hangul_sindex mod UTF8PROC_HANGUL_TCOUNT) = 0) then
         begin
           hangul_tindex := current_char - UTF8PROC_HANGUL_TBASE;
-          if (hangul_tindex >= 0) and (hangul_tindex < UTF8PROC_HANGUL_TCOUNT) then
+          if (hangul_tindex > 0) and (hangul_tindex < UTF8PROC_HANGUL_TCOUNT) then
           begin
             starter^ := starter^ + hangul_tindex;
             starter_property := nil;

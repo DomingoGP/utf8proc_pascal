@@ -18,19 +18,11 @@ begin
   input := #$72#$cc#$87#$cc#$a3#$00; {* "r\u0307\u0323" *}
   nfc := #$e1#$b9#$9b#$cc#$87#$00; {* "\u1E5B\u0307" *}
   nfd := #$72#$cc#$a3#$cc#$87#$00; {* "r\u0323\u0307" *}
-  nfc_out := utf8proc_NFC(input);
-  writeln(Format('NFC "%s" -> "%s" vs. "%s"', [input, nfc_out, nfc]));
-  check(strlen(nfc_out) = 5, 'incorrect nfc length', []);
-  check(CompareMem(nfc, nfc_out, 6), 'incorrect nfc data', []);
-  nfd_out := utf8proc_NFD(input);
-  writeln(Format('NFD "%s" -> "%s" vs. "%s"', [input, nfd_out, nfd]));
-  check(strlen(nfd_out) = 5, 'incorrect nfd length', []);
-  check(CompareMem(nfd, nfd_out, 6), 'incorrect nfd data', []);
-  utf8proc_free(nfd_out);
-  utf8proc_free(nfc_out);
+  check_compare('NFC', input, nfc, utf8proc_NFC(input), 1);
+  check_compare('NFD', input, nfd, utf8proc_NFD(input), 1);
 end;
 
-procedure issue102; {* #128 *}
+procedure issue102; {* #102 *}
 var
   input, stripna, correct, output: pansichar;
 begin
@@ -39,20 +31,36 @@ begin
   correct := #$78#$e2#$81#$a5#$c3#$a8#$61#$00; {* "x\u2065\u00e8a" *}
   utf8proc_map(input, 0, @output, UTF8PROC_NULLTERM or UTF8PROC_STABLE or UTF8PROC_COMPOSE or UTF8PROC_COMPAT or
     UTF8PROC_CASEFOLD or UTF8PROC_IGNORE or UTF8PROC_STRIPNA);
-  writeln(Format('NFKC_Casefold "%s" -> "%s" vs. "%s"', [input, output, stripna]));
-  check(strlen(output) = 4, 'incorrect NFKC_Casefold+stripna length', []);
-  check(CompareMem(stripna, output, 5), 'incorrect NFKC_Casefold+stripna data', []);
-  utf8proc_free(output);
-  output := utf8proc_NFKC_Casefold(input);
-  writeln(Format('NFKC_Casefold "%s" -> "%s" vs. "%s"', [input, output, correct]));
-  check(strlen(output) = 7, 'incorrect NFKC_Casefold length', []);
-  check(CompareMem(correct, output, 8), 'incorrect NFKC_Casefold data', []);
-  utf8proc_free(output);
+  check_compare('NFKC_Casefold+stripna', input, stripna, output, 1);
+  check_compare('NFKC_Casefold', input, correct, utf8proc_NFKC_Casefold(input), 1);
 end;
+
+  procedure issue317;  {/* #317 */}
+  var
+    input, combined: pansichar;
+    codepoint: utf8proc_int32_t;
+  begin
+    input := #$ec#$a3#$a0#$e1#$86#$a7#$00; {/* "\uc8e0\u11a7" */}
+    combined := #$ec#$a3#$a#$00; {/* "\uc8e1" */}
+
+    {/* inputs that should *not* be combined* */}
+    check_compare('NFC', input, input, utf8proc_NFC(input), 1);
+    utf8proc_encode_char($11c3, input + 3);
+    check_compare('NFC', input, input, utf8proc_NFC(input), 1);
+
+    {/* inputs that *should* be combined (TCOUNT-1 chars starting at TBASE+1) */}
+    for codepoint := $11a8 to Pred($11c3) do
+    begin
+      utf8proc_encode_char(codepoint, input + 3);
+      utf8proc_encode_char($c8e0 + (codepoint - $11a7), combined);
+      check_compare('NFC', input, combined, utf8proc_NFC(input), 1);
+    end;
+  end;
 
 begin
   issue128();
   issue102();
+  issue317();
   {$ifdef UNICODE_VERSION}
   writeln(Format('Unicode version: Makefile has %s, has API %s', [UNICODE_VERSION, utf8proc_unicode_version]));
   check( UNICODE_VERSION = utf8proc_unicode_version, 'utf8proc_unicode_version mismatch');

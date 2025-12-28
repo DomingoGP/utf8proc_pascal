@@ -14,11 +14,16 @@ var
 function skipspaces(buf: pansichar; i: size_t): size_t;
 function encode(dest: pansichar; var dest_len: size_t; buf: pchar): size_t;
 function check(ACond: boolean; AFormat: string; const Args: array of const):boolean;
+procedure print_escaped(var f:Text;utf8:PAnsiChar);
+procedure print_string_and_escaped(var f:Text;utf8:PAnsiChar);
+procedure check_compare(transformation:string;
+                   input:PAnsiChar; expected:PAnsiChar;
+                   received:PAnsiChar;free_received:integer);
 
 implementation
 
 uses
-  character, SysUtils, utf8proc in '../utf8proc.pas';
+  character, SysUtils, Strings, utf8proc in '../utf8proc.pas';
 
 function skipspaces(buf: pansichar; i: size_t): size_t;
 begin
@@ -75,12 +80,77 @@ begin
   inc(total_checks);
   if not ACond then
   begin
-    tmp := Format('*** ERROR in line %d: ', [lineno]);
+    if lineno <> 0 then
+       tmp := Format('*** FAILED at line %d: ', [lineno])
+     else
+       tmp := '*** FAILED ';
     tmp := tmp + Format(AFormat, Args);
     writeln(tmp);
     Inc(failures);
   end;
   result := ACond;
+end;
+
+
+procedure print_escaped(var f:Text;utf8:PAnsiChar);
+var
+  codepoint:utf8proc_int32_t;
+  len:integer;
+begin
+  write(f,'"');
+  while utf8^<>#0 do
+  begin
+    len := utf8proc_iterate(utf8, -1, @codepoint);
+    Inc(utf8,len);
+    if codepoint < $10000 then
+      write(f, Format('\u%04x',[codepoint]))
+    else
+      write(f, Format('\U%06x',[codepoint]));
+  end;
+  write(f,'"');
+end;
+
+procedure print_string_and_escaped(var f: Text; utf8: pansichar);
+begin
+  Write(f, '"', utf8, '" (');
+  print_escaped(f, utf8);
+  Write(f, ')');
+end;
+
+procedure check_compare(transformation: string; input: pansichar;
+  expected: pansichar; received: pansichar; free_received: integer);
+var
+  passed: boolean;
+  f: Text;
+begin
+  passed := strcomp(received, expected) = 0;
+  if passed then
+  begin
+    f := StdOut;
+    Write(f, 'PASSED ', transformation, ' ');
+  end
+  else
+  begin
+    f := StdErr;
+    Write(f, 'FAILED ', transformation, ' ');
+  end;
+  print_string_and_escaped(f, input);
+  Write(f, ' -> ');
+  print_string_and_escaped(f, received);
+  if not passed then
+  begin
+    Write(f, ' <> expected ');
+    print_string_and_escaped(f, expected);
+  end;
+  writeln(f);
+  if free_received <> 0 then
+    FreeMem(received);
+  if not passed then
+  begin
+    writeln('HALT in check_compare enter to exit');
+    readln;
+    halt(1);
+  end;
 end;
 
 end.

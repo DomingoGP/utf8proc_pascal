@@ -31,11 +31,7 @@ var
 begin
   utf8proc_map_custom(input, 0,  @output, UTF8PROC_CASEFOLD  or  UTF8PROC_COMPOSE  or  UTF8PROC_COMPAT  or  UTF8PROC_NULLTERM,
                       @custom,  @thunk_test);
-  writeln(Format('mapped "%s" -> "%s"',[AnsiString(input),AnsiString(output)]));
-  check(strlen(output) = 6, 'incorrect output length',[]);
-  check(CompareMem(correct, output, 7), 'incorrect output data',[]);
-  utf8proc_free(output);
-
+  check_compare('map_custom', input, correct, output, 1);
   writeln('map_custom tests SUCCEEDED.');
   writeln('');
   writeln('Press enter to exit');
