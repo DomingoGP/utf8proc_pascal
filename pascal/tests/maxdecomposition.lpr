@@ -5,7 +5,8 @@ program maxdecomposition;
 {$endif}   
 
 uses
-  utf8proc in '../utf8proc.pas';
+  utf8proc;
+
 var
   maxsize:utf8proc_ssize_t;
   success:boolean;
@@ -33,6 +34,7 @@ begin
     else
       write('FAILED');
     writeln(' maximum decomposed size = ',maxsize,' chars');
+    writeln('Press <enter> to exit.');
     readln;
     ExitCode := (integer( not success));
 end.

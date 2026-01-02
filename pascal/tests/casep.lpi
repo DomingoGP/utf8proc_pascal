@@ -26,16 +26,15 @@
     </RunParams>
     <RequiredPackages>
       <Item>
+        <PackageName Value="utf8procpackage"/>
+      </Item>
+      <Item>
         <PackageName Value="LazUtils"/>
       </Item>
     </RequiredPackages>
     <Units>
       <Unit>
         <Filename Value="casep.lpr"/>
-        <IsPartOfProject Value="True"/>
-      </Unit>
-      <Unit>
-        <Filename Value="..\utf8proc.pas"/>
         <IsPartOfProject Value="True"/>
       </Unit>
     </Units>

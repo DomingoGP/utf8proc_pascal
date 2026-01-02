@@ -23,11 +23,11 @@ procedure check_compare(transformation:string;
 implementation
 
 uses
-  character, SysUtils, Strings, utf8proc in '../utf8proc.pas';
+  SysUtils, Strings, utf8proc,character;
 
 function skipspaces(buf: pansichar; i: size_t): size_t;
 begin
-  while (iswhitespace(buf[i])) do
+  while iswhitespace(buf[i]) do
     Inc(i);
   Result := i;
 end;
@@ -147,7 +147,8 @@ begin
     FreeMem(received);
   if not passed then
   begin
-    writeln('HALT in check_compare enter to exit');
+    writeln('HALT in check_compare.');
+    writeln('Press <enter> to exit');
     readln;
     halt(1);
   end;

@@ -6,8 +6,7 @@ program custom;
 
 uses
   SysUtils,
-  test,
-  utf8proc in '../utf8proc.pas';
+  test, utf8proc;
 
 var
   thunk_test:integer = 1;

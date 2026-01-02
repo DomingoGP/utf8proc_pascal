@@ -7,7 +7,7 @@ program normtest;
 uses
   test,
   Strings,
-  utf8proc in '../utf8proc.pas';
+  utf8proc;
 
 type
   CharArray = array[0..1023] of ansichar;

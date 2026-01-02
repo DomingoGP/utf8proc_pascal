@@ -10,7 +10,7 @@ uses
   Strings,
   SysUtils,
   StrUtils,
-  utf8proc in '../utf8proc.pas';
+  utf8proc;
 
 var
   i: integer;

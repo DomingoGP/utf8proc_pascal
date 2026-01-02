@@ -14,7 +14,7 @@ uses
   SysUtils,
   test,
   Strings,
-  utf8proc in '../utf8proc.pas';
+  utf8proc;
 
 var
   c, error: integer;

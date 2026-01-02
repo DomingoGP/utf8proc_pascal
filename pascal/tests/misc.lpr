@@ -9,11 +9,11 @@ program misc;
 uses
   SysUtils,
   test,
-  utf8proc in '../utf8proc.pas';
+  utf8proc;
 
 procedure issue128; {* #128 *}
 var
-  input, nfc, nfd, nfc_out, nfd_out: pansichar;
+  input, nfc, nfd: pansichar;
 begin
   input := #$72#$cc#$87#$cc#$a3#$00; {* "r\u0307\u0323" *}
   nfc := #$e1#$b9#$9b#$cc#$87#$00; {* "\u1E5B\u0307" *}
@@ -37,11 +37,13 @@ end;
 
   procedure issue317;  {/* #317 */}
   var
+    input_s:array[0..6] of ansichar = (#$ec,#$a3,#$a0,#$e1,#$86,#$a7,#$00); {/* "\uc8e0\u11a7" */}
+    combined_s:array[0..3] of ansichar = (#$ec,#$a3,#$a,#$00);   {/* "\uc8e1" */}
     input, combined: pansichar;
     codepoint: utf8proc_int32_t;
   begin
-    input := #$ec#$a3#$a0#$e1#$86#$a7#$00; {/* "\uc8e0\u11a7" */}
-    combined := #$ec#$a3#$a#$00; {/* "\uc8e1" */}
+    input := PAnsiChar(@input_s[0]);
+    combined := PAnsiChar(@combined_s[0]);
 
     {/* inputs that should *not* be combined* */}
     check_compare('NFC', input, input, utf8proc_NFC(input), 1);

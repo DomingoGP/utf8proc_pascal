@@ -12,7 +12,7 @@ uses
   test,
   Strings,
   LazUtf8,
-  utf8proc in '../utf8proc.pas';
+  utf8proc;
 
 type
 

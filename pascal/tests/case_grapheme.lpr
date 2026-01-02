@@ -16,8 +16,8 @@ uses
   test,
   Strings,
   LazUtf8,
-  grapheme_case,
-  utf8proc in '../utf8proc.pas';
+  utf8proc,
+  grapheme_case;
 
 type
 

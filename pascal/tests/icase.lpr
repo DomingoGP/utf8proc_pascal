@@ -8,7 +8,7 @@ uses
   test,
   Strings,
   SysUtils,
-  utf8proc in '../utf8proc.pas';
+  utf8proc;
 
 type
   iscasefunction = function(c: utf8proc_int32_t): boolean;
