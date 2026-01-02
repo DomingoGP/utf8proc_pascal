@@ -1,6 +1,6 @@
 ## utf8proc license ##
 
-Pascal translation of the utf8proc library plus some additions: 2025 Domingo Galmés
+Pascal translation of the utf8proc library plus some additions: 2025-2026 Domingo Galmés
   See https://github.com/JuliaStrings/utf8proc
       http://juliastrings.github.io/utf8proc/
  

@@ -1,7 +1,7 @@
 unit utf8proc;
 
 {*
- * Pascal translation of the utf8proc library plus some additions: 2025 Domingo Galmés
+ * Pascal translation of the utf8proc library plus some additions: 2025-2026 Domingo Galmés
  * See https://github.com/JuliaStrings/utf8proc
  *     http://juliastrings.github.io/utf8proc/
  *
@@ -104,8 +104,8 @@ const
   { The MINOR version number (increased when new functionality is added in a backwards-compatible manner).}
   UTF8PROC_VERSION_MINOR = 11;
   { The PATCH version (increased for fixes that do not change the API).}
-  UTF8PROC_VERSION_PATCH = 2;
-  UTF8PROC_VERSION_STR = '2.11.2';
+  UTF8PROC_VERSION_PATCH = 3;
+  UTF8PROC_VERSION_STR = '2.11.3';
   UTF8PROC_UNICODE_VERSION_STR = '17.0.0';
 
 type
@@ -1673,7 +1673,7 @@ var
   idx: integer;
 begin
   {* UTF8PROC_NULLTERM option will be ignored, 'length' is never ignored *}
-  if (options and (UTF8PROC_NLF2LS or UTF8PROC_NLF2PS or UTF8PROC_STRIPCC) <> 0) then
+  if (options and (UTF8PROC_NLF2LS or UTF8PROC_NLF2PS or UTF8PROC_STRIPCC)) <> 0 then
   begin
     wpos := 0;
     rpos := 0;
@@ -1738,6 +1738,12 @@ begin
     while rpos < length do
     begin
       current_char := buffer[rpos];
+      if current_char < 0 then
+      begin
+        {* skip grapheme break *}
+        Inc(rpos);
+        continue;
+      end;
       current_property := unsafe_get_property(current_char);
       if (starter <> nil) and (current_property^.combining_class > max_combining_class) then
       begin
