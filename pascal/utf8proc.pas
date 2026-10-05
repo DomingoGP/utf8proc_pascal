@@ -668,9 +668,6 @@ function utf8proc_decompose_custom(str: pansichar; strlen: utf8proc_ssize_t; buf
  * @exit
  * In case of success, the length (in codepoints) of the normalized UTF-32 string is
  * exited; otherwise, a negative error code is exited (utf8proc_errmsg()).
- *
- * @warning The entries of the array pointed to by `str` have to be in the
- *          range `$0000` to `$10FFFF`. Otherwise, the program might crash not
  }
 //UTF8PROC_DLLEXPORT utf8proc_ssize_t utf8proc_normalize_utf32(utf8proc_int32_t *buffer, utf8proc_ssize_t length, utf8proc_option_t options);
 function utf8proc_normalize_utf32(buffer: Putf8proc_int32_t; length: utf8proc_ssize_t; options: utf8proc_option_t): utf8proc_ssize_t;
