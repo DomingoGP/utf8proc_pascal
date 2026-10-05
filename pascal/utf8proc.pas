@@ -102,11 +102,11 @@ uses
 const
   UTF8PROC_VERSION_MAJOR = 2;
   { The MINOR version number (increased when new functionality is added in a backwards-compatible manner).}
-  UTF8PROC_VERSION_MINOR = 11;
+  UTF8PROC_VERSION_MINOR = 12;
   { The PATCH version (increased for fixes that do not change the API).}
-  UTF8PROC_VERSION_PATCH = 3;
-  UTF8PROC_VERSION_STR = '2.11.3';
-  UTF8PROC_UNICODE_VERSION_STR = '17.0.0';
+  UTF8PROC_VERSION_PATCH = 0;
+  UTF8PROC_VERSION_STR = '2.12.0';
+  UTF8PROC_UNICODE_VERSION_STR = '18.0.0';
 
 type
 
@@ -1209,7 +1209,7 @@ begin
     if (state^ = 0) then  {* state initialization *}
     begin
       state_bc := lbc;
-      if licb = UTF8PROC_INDIC_CONJUNCT_BREAK_CONSONANT then
+      if licb = UTF8PROC_INDIC_CONJUNCT_BREAK_LINKER then
         state_icb := licb
       else
         state_icb := UTF8PROC_INDIC_CONJUNCT_BREAK_NONE;
@@ -1223,18 +1223,17 @@ begin
     break_permitted := grapheme_break_simple(state_bc, tbc) and (not ((state_icb = UTF8PROC_INDIC_CONJUNCT_BREAK_LINKER) and
       (ticb = UTF8PROC_INDIC_CONJUNCT_BREAK_CONSONANT))); // GB9c
 
-    // Special support for GB9c.  Don't break between two consonants
-    // separated 1+ linker characters and 0+ extend characters in any order.
-    // After a consonant, we enter LINKER state after at least one linker.
-    if (ticb = UTF8PROC_INDIC_CONJUNCT_BREAK_CONSONANT) or (state_icb = UTF8PROC_INDIC_CONJUNCT_BREAK_CONSONANT) or
-      (state_icb = UTF8PROC_INDIC_CONJUNCT_BREAK_EXTEND) then
-      state_icb := ticb
-    else if (state_icb = UTF8PROC_INDIC_CONJUNCT_BREAK_LINKER) then
+    // Special support for GB9c, which since Unicode 18 reads
+    //     \p{InCB=Linker} \p{InCB=Extend}* x \p{InCB=Consonant}
+    // We are in LINKER state iff the last character was a linker, or was an
+    // extender preceded (transitively) by a linker.  (Before Unicode 18 the
+    // rule additionally required a consonant in front of the linker.)
+    if (ticb = UTF8PROC_INDIC_CONJUNCT_BREAK_LINKER) then
+      state_icb := UTF8PROC_INDIC_CONJUNCT_BREAK_LINKER
+    else if not ((ticb = UTF8PROC_INDIC_CONJUNCT_BREAK_EXTEND)
+      and (state_icb = UTF8PROC_INDIC_CONJUNCT_BREAK_LINKER)) then
     begin
-      if ticb = UTF8PROC_INDIC_CONJUNCT_BREAK_EXTEND then
-        state_icb := UTF8PROC_INDIC_CONJUNCT_BREAK_LINKER
-      else
-        state_icb := ticb;
+      state_icb := UTF8PROC_INDIC_CONJUNCT_BREAK_NONE;
     end;
     // Special support for GB 12/13 made possible by GB999. After two RI
     // class codepoints we want to force a break. Do this by resetting the
@@ -1774,6 +1773,9 @@ begin
         end;
         if starter_property = nil then
         begin
+          {* `*starter` is either a Hangul character, or points into
+          the table `utf8proc_combinations_combined`. It is always
+          valid. *}
           starter_property := unsafe_get_property(starter^);
         end;
         idx := starter_property^.comb_index;

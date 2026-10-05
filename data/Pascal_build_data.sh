@@ -13,3 +13,16 @@ perl -pi -0pe 's/,\n\)/\n\)/g' utf8proc_data.inc.new
 cat LICENSE_UNICODE.text utf8proc_data.inc.new > ../pascal/utf8proc_data.inc
 #remove temporal file.
 rm utf8proc_data.inc.new
+
+
+
+make -f PascalMakefile.mak GraphemeBreakTest.txt
+make -f PascalMakefile.mak NormalizationTest.txt
+
+julia -e 'print(match(r"# Derived Property: Uppercase.*?# Total code points:"s, read("DerivedCoreProperties.txt", String)).match)' > Uppercase.txt
+julia -e 'print(match(r"# Derived Property: Lowercase.*?# Total code points:"s, read("DerivedCoreProperties.txt", String)).match)' > Lowercase.txt
+
+cp GraphemeBreakTest.txt ../pascal/tests/GraphemeBreakTest.txt
+cp NormalizationTest.txt ../pascal/tests/NormalizationTest.txt
+cp Uppercase.txt ../pascal/tests/Uppercase.txt
+cp Lowercase.txt ../pascal/tests/Lowercase.txt
