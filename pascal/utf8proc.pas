@@ -1737,9 +1737,10 @@ begin
     while rpos < length do
     begin
       current_char := buffer[rpos];
-      if current_char < 0 then
+      if (current_char < 0) or (current_char >= $110000) then
       begin
-        {* skip grapheme break *}
+        {* skip grapheme-break sentinel or out-of-range codepoint;
+        unsafe_get_property would OOB on utf8proc_stage1table (idx = uc >> 8) *}
         Inc(rpos);
         continue;
       end;
