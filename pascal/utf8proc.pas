@@ -604,7 +604,7 @@ function utf8proc_get_property(uc: utf8proc_int32_t): Putf8proc_property_t;
 //  utf8proc_option_t options, int *last_boundclass
 //);
 function utf8proc_decompose_char(uc: utf8proc_int32_t; dst: Putf8proc_int32_t; bufsize: utf8proc_ssize_t; options: utf8proc_option_t;
-  last_boundclass: PInteger): utf8proc_ssize_t;
+  last_boundclass: putf8proc_int32_t): utf8proc_ssize_t;
 
 
 
@@ -1288,7 +1288,7 @@ begin
 end;
 
 function seqindex_write_char_decomposed(seqindex: utf8proc_uint16_t; dst: Putf8proc_int32_t; bufsize: utf8proc_ssize_t;
-  options: utf8proc_option_t; last_boundclass: PInteger): utf8proc_ssize_t;
+  options: utf8proc_option_t; last_boundclass: putf8proc_int32_t): utf8proc_ssize_t;
 var
   written: utf8proc_ssize_t;
   entry: Putf8proc_uint16_t;
@@ -1409,7 +1409,7 @@ begin
 end;
 
 function utf8proc_decompose_char(uc: utf8proc_int32_t; dst: Putf8proc_int32_t; bufsize: utf8proc_ssize_t; options: utf8proc_option_t;
-  last_boundclass: PInteger): utf8proc_ssize_t;
+  last_boundclass: putf8proc_int32_t): utf8proc_ssize_t;
 var
   lproperty: Putf8proc_property_t;
   category: utf8proc_category_t;
@@ -1544,7 +1544,7 @@ var
   uc: utf8proc_int32_t;
   rpos: utf8proc_ssize_t;
   decomp_result: utf8proc_ssize_t;
-  boundclass: integer;
+  boundclass: utf8proc_int32_t;
   uc1, uc2: utf8proc_int32_t;
   pr: Putf8proc_int32_t;
   ps: utf8proc_ssize_t;
