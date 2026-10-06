@@ -1727,8 +1727,17 @@ begin
       current_char := buffer[rpos];
       if (current_char < 0) or (current_char >= $110000) then
       begin
-        {* skip grapheme-break sentinel or out-of-range codepoint;
-        unsafe_get_property would OOB on utf8proc_stage1table (idx = uc >> 8) *}
+        {* grapheme-break sentinel or out-of-range codepoint: pass it through
+        unchanged, but never compose across it, since we cannot inspect it
+        (unsafe_get_property would OOB on utf8proc_stage1table, idx = uc >> 8).
+        utf8proc_reencode drops what cannot be encoded, so this is invisible
+        to utf8proc_map. *}
+        buffer[wpos] := current_char;
+        Inc(wpos);
+        starter := nil;
+        starter_property := nil;
+        max_combining_class := -1;
+
         Inc(rpos);
         continue;
       end;

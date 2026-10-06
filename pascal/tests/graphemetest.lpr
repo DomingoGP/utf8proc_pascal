@@ -30,6 +30,10 @@ var
   glen:utf8proc_ssize_t;
   g:PAnsiChar;
 
+  input356:AnsiString= #$65#$cc#$81#$78#$79#$00;
+  output356:AnsiString= #$ff#$c3#$a9#$ff#$78#$ff#$79#$00;
+  nfd356:AnsiString = #$ff#$65#$cc#$81#$ff#$78#$ff#$79#$00;
+
 
   function String2Hex ( const s: string ): string;
    var
@@ -192,14 +196,31 @@ begin
 
     {* issue 144 *}
 
-      //utf8proc_uint8_t input[] := begin$ef,$bf,$bf,$ef,$bf,$be,$00end;; {* "\uffff\ufffe" *}
-      //utf8proc_uint8_t output[] := begin$ff,$ef,$bf,$bf,$ff,$ef,$bf,$be,$00end;; {* with $ff grapheme markers *}
-      //utf8proc_ssize_t glen;
-      //utf8proc_uint8_t *g;
-      glen := utf8proc_map(PAnsiChar(input), 6,  @g, UTF8PROC_CHARBOUND);
-      check(strcomp(g, PAnsiChar(output))=0, 'mishandled u+ffff and u+fffe grapheme breaks',[]);
-      check(glen <> 6, 'mishandled u+ffff and u+fffe grapheme breaks',[]);
-      utf8proc_free(g);
+    //utf8proc_uint8_t input[] := begin$ef,$bf,$bf,$ef,$bf,$be,$00end;; {* "\uffff\ufffe" *}
+    //utf8proc_uint8_t output[] := begin$ff,$ef,$bf,$bf,$ff,$ef,$bf,$be,$00end;; {* with $ff grapheme markers *}
+    //utf8proc_ssize_t glen;
+    //utf8proc_uint8_t *g;
+    glen := utf8proc_map(PAnsiChar(input), 6,  @g, UTF8PROC_CHARBOUND);
+    check(strcomp(g, PAnsiChar(output))=0, 'mishandled u+ffff and u+fffe grapheme breaks',[]);
+    check(glen <> 6, 'mishandled u+ffff and u+fffe grapheme breaks',[]);
+    utf8proc_free(g);
+
+
+    {/* issue 356: UTF8PROC_CHARBOUND must still insert 0xff markers when
+    combined with UTF8PROC_COMPOSE or UTF8PROC_DECOMPOSE */}
+
+    {/* "e\u0301xy" -> NFC "\u00e9xy" with a marker before each grapheme */}
+    glen := utf8proc_map(PAnsiChar(input356), 0, @g, UTF8PROC_NULLTERM or UTF8PROC_CHARBOUND or UTF8PROC_COMPOSE);
+    check(glen = 7, 'CHARBOUND|COMPOSE returned length %d, expected 7',[glen]);
+    check(strcomp(PAnsiChar(g), PAnsiChar(output356))=0, 'CHARBOUND|COMPOSE dropped grapheme markers',[]);
+    utf8proc_free(g);
+
+    {/* same input, decomposed: "e\u0301xy" is unchanged by NFD */}
+    glen := utf8proc_map(PAnsiChar(input356), 0, @g, UTF8PROC_NULLTERM or UTF8PROC_CHARBOUND or UTF8PROC_DECOMPOSE);
+    check(glen = 8, 'CHARBOUND|DECOMPOSE returned length %d, expected 8', [glen]);
+    check(strcomp(PAnsiChar(g),PAnsiChar(nfd356))=0, 'CHARBOUND|DECOMPOSE dropped grapheme markers',[]);
+    utf8proc_free(g);
+
 
     {* https://github.com/JuliaLang/julia/issues/37680 *}
     checkline('/ 1f1f8 1f1ea / 1f1f8 1f1ea /', true); {* Two swedish flags after each other *}
