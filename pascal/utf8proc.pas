@@ -1296,6 +1296,7 @@ var
   entry_cp: utf8proc_int32_t;
   lsize: utf8proc_ssize_t;
   ldst: Putf8proc_int32_t;
+  decomp_result: utf8proc_ssize_t;
 begin
   written := 0;
   entry := @utf8proc_sequences[seqindex and $3FFF];
@@ -1317,9 +1318,10 @@ begin
     lsize := 0;
     if bufsize > written then
       lsize := bufsize - written;
-    Inc(written, utf8proc_decompose_char(entry_cp, ldst, lsize, options, last_boundclass));
-    if (written < 0) then
-      exit(UTF8PROC_ERROR_OVERFLOW);
+    decomp_result := utf8proc_decompose_char(entry_cp, ldst, lsize, options, last_boundclass);
+    if decomp_result < 0 then
+      Exit(decomp_result);
+    Inc(written, decomp_result);
     Inc(entry);
     Dec(len);
   end;
@@ -1548,6 +1550,7 @@ var
   ps: utf8proc_ssize_t;
   property1, property2: Putf8proc_property_t;
   pos: utf8proc_ssize_t;
+  nread: utf8proc_ssize_t;
 begin
   {* strlen will be ignored, if UTF8PROC_NULLTERM is set in options *}
   wpos := 0;
@@ -1562,13 +1565,14 @@ begin
   begin
     if (options and UTF8PROC_NULLTERM) <> 0 then
     begin
-      Inc(rpos, utf8proc_iterate(str + rpos, -1, @uc));
+      nread := utf8proc_iterate(str + rpos, -1, @uc);
       {* checking of return value is not necessary,
          as 'uc' is < 0 in case of error *}
       if (uc < 0) then
         exit(UTF8PROC_ERROR_INVALIDUTF8);
-      if (rpos < 0) then
-        exit(UTF8PROC_ERROR_OVERFLOW);
+      if nread > (SSIZE_MAX - rpos) then
+        Exit(UTF8PROC_ERROR_OVERFLOW);
+      Inc(rpos, nread);
       if (uc = 0) then
         break;
     end
@@ -1592,10 +1596,11 @@ begin
     decomp_result := utf8proc_decompose_char(uc, pr, ps, options, @boundclass);
     if (decomp_result < 0) then
       exit(decomp_result);
-    Inc(wpos, decomp_result);
+
     {/* prohibiting integer overflows due to too long strings: *}
-    if (wpos < 0) or (wpos > utf8proc_ssize_t((SSIZE_MAX div sizeof(utf8proc_int32_t) div 2))) then
+    if decomp_result > ((SSIZE_MAX/sizeof(utf8proc_int32_t)/2) - wpos) then
       exit(UTF8PROC_ERROR_OVERFLOW);
+    Inc(wpos, decomp_result);
   end;
 
   if ((options and (UTF8PROC_COMPOSE or UTF8PROC_DECOMPOSE)) <> 0) and (bufsize >= wpos) then
