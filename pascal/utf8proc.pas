@@ -2049,6 +2049,7 @@ function utf8proc_map_custom(const str: rawbytestring; out dststr: rawbytestring
 var
   strlen: utf8proc_ssize_t;
   buffer: Putf8proc_int32_t;
+  bufsize: utf8proc_ssize_t;
 begin
   strlen := Length(str);
   if strlen <= 0 then
@@ -2056,22 +2057,31 @@ begin
     dststr := '';
     exit(strlen);
   end;
-  Result := utf8proc_decompose_custom(Pointer(str), strlen, nil, 0, options, custom_func, custom_data);
-  if (Result < 0) then
-    exit(Result);
+  bufsize := utf8proc_decompose_custom(Pointer(str), strlen, nil, 0, options, custom_func, custom_data);
+  if bufsize < 0 then
+    exit(bufsize);
   try
     uniquestring(dststr);
-    SetLength(dststr, utf8proc_size_t(Result) * sizeof(utf8proc_int32_t) {+ 1});
+    SetLength(dststr, utf8proc_size_t(bufsize) * sizeof(utf8proc_int32_t) {+ 1});
     buffer := @dststr[1];
     if buffer = nil then
       exit(UTF8PROC_ERROR_NOMEM);
-    Result := utf8proc_decompose_custom(Pointer(str), strlen, buffer, Result, options, custom_func, custom_data);
+    Result := utf8proc_decompose_custom(Pointer(str), strlen, buffer, bufsize, options, custom_func, custom_data);
     if Result >= 0 then
       Result := utf8proc_reencode(buffer, Result, options);
     if Result < 0 then
     begin
       dststr := '';
       exit(Result);
+    end;
+    {/* a custom_func that returns different results across the two decompose
+    passes can make the second pass longer than the buffer we sized from the
+    first; reencode would then read and write past the allocation, so bail
+    out instead of corrupting the heap */}
+    if (result > bufsize) then
+    begin
+      dststr := ''; //free(buffer);
+      exit(UTF8PROC_ERROR_OVERFLOW);
     end;
     SetLength(dststr, Result);
     exit(Result);
