@@ -18,7 +18,8 @@ var
   tests: integer;
   error: integer;
 
-  byt: utf8proc_int32_t;
+  byt: byte;
+  u: utf8proc_int32_t;
   buf: array [0..15] of ansichar;
 
 procedure testbytes(ABuf: pansichar; len: utf8proc_ssize_t; retval: utf8proc_ssize_t; line: integer);
@@ -87,14 +88,14 @@ begin
   CHECKVALID(2, #$be, 3, {$I %LINENUM%});
   CHECKVALID(2, #$bf, 3, {$I %LINENUM%});
   // Check $??fffe  and  $??ffff
-  byt := $1fffe;
-  while byt < $110000 do
+  u := $1fffe;
+  while u < $110000 do
   begin
-    buf[0] := ansichar($f0 or (byt shr 18));
-    buf[1] := ansichar($80 or ((byt shr 12) and $3f));
+    buf[0] := ansichar($f0 or (u shr 18));
+    buf[1] := ansichar($80 or ((u shr 12) and $3f));
     CHECKVALID(3, #$be, 4, {$I %LINENUM%});
     CHECKVALID(3, #$bf, 4, {$I %LINENUM%});
-    Inc(byt, $10000);
+    Inc(u, $10000);
   end;
 
   // Continuation byte not after lead
@@ -112,12 +113,12 @@ begin
 
   // Test lead bytes
   byt := $c0;
-  while byt <= $ff do
+  while byt > $00 do
   begin
     // Single lead byte at end of string
     CHECKINVALID(0, ansichar(byt), 1, {$I %LINENUM%});
     // Lead followed by non-continuation character < 0x80
-    CHECKINVALID(1, ansichar(65), 2, {$I %LINENUM%});
+    CHECKINVALID(1, ansichar($41), 2, {$I %LINENUM%});
     // Lead followed by non-continuation character > 0xbf
     CHECKINVALID(1, #$c0, 2, {$I %LINENUM%});
     Inc(byt);
@@ -208,7 +209,7 @@ begin
     // Lead followed by only 1 continuation byte
     CHECKINVALID(0, ansichar(byt), 2, {$I %LINENUM%});
     // Lead ended by non-continuation character < 0x80
-    CHECKINVALID(2, #65, 3, {$I %LINENUM%});
+    CHECKINVALID(2, #$41, 3, {$I %LINENUM%});
     // Lead ended by non-continuation character > 0xbf
     CHECKINVALID(2, #$c0, 3, {$I %LINENUM%});
     Inc(byt);
@@ -232,7 +233,7 @@ begin
     // Lead followed by only 2 continuation bytes
     CHECKINVALID(0, ansichar(byt), 3, {$I %LINENUM%});
     // Lead followed by non-continuation character < 0x80
-    CHECKINVALID(3, #65, 4, {$I %LINENUM%});
+    CHECKINVALID(3, #$41, 4, {$I %LINENUM%});
     // Lead followed by non-continuation character > 0xbf
     CHECKINVALID(3, #$c0, 4, {$I %LINENUM%});
     Inc(byt);
