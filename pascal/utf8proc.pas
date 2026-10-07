@@ -1885,21 +1885,32 @@ var
   buffer: Putf8proc_int32_t;
   //utf8proc_ssize_t result;
   newptr: Putf8proc_int32_t;
+  bufsize: utf8proc_ssize_t;
 begin
   dstptr^ := nil;
-  Result := utf8proc_decompose_custom(str, strlen, nil, 0, options, custom_func, custom_data);
-  if (Result < 0) then
-    exit(Result);
+  bufsize := utf8proc_decompose_custom(str, strlen, nil, 0, options, custom_func, custom_data);
+  if (bufsize < 0) then
+    exit(bufsize);
   try
-    buffer := GetMem(utf8proc_size_t(Result) * sizeof(utf8proc_int32_t) + 1);
+    buffer := GetMem(utf8proc_size_t(bufsize) * sizeof(utf8proc_int32_t) + 1);
     if buffer = nil then
       exit(UTF8PROC_ERROR_NOMEM);
-    Result := utf8proc_decompose_custom(str, strlen, buffer, Result, options, custom_func, custom_data);
+    Result := utf8proc_decompose_custom(str, strlen, buffer, bufsize, options, custom_func, custom_data);
     if Result < 0 then
     begin
       FreeMem(buffer);
       exit(Result);
     end;
+    {/* a custom_func that returns different results across the two decompose
+    passes can make the second pass longer than the buffer we sized from the
+    first; reencode would then read and write past the allocation, so bail
+    out instead of corrupting the heap */}
+    if (Result > bufsize) then
+    begin
+      FreeMem(buffer);
+      exit(UTF8PROC_ERROR_OVERFLOW);
+    end;
+
     Result := utf8proc_reencode(buffer, Result, options);
     if Result < 0 then
     begin
@@ -2043,51 +2054,25 @@ end;
 
 {$endif}
 
-//avoid conversions and copys, Use the dststr string as buffer.
 function utf8proc_map_custom(const str: rawbytestring; out dststr: rawbytestring; options: utf8proc_option_t;
   custom_func: utf8proc_custom_func = nil; custom_data: Pointer = nil): utf8proc_ssize_t; overload;
 var
   strlen: utf8proc_ssize_t;
-  buffer: Putf8proc_int32_t;
-  bufsize: utf8proc_ssize_t;
+  buffer: PAnsiChar;
 begin
+  buffer:=nil;
   strlen := Length(str);
   if strlen <= 0 then
   begin
     dststr := '';
     exit(strlen);
   end;
-  bufsize := utf8proc_decompose_custom(Pointer(str), strlen, nil, 0, options, custom_func, custom_data);
-  if bufsize < 0 then
-    exit(bufsize);
-  try
-    uniquestring(dststr);
-    SetLength(dststr, utf8proc_size_t(bufsize) * sizeof(utf8proc_int32_t) {+ 1});
-    buffer := @dststr[1];
-    if buffer = nil then
-      exit(UTF8PROC_ERROR_NOMEM);
-    Result := utf8proc_decompose_custom(Pointer(str), strlen, buffer, bufsize, options, custom_func, custom_data);
-    if Result >= 0 then
-      Result := utf8proc_reencode(buffer, Result, options);
-    if Result < 0 then
-    begin
-      dststr := '';
-      exit(Result);
-    end;
-    {/* a custom_func that returns different results across the two decompose
-    passes can make the second pass longer than the buffer we sized from the
-    first; reencode would then read and write past the allocation, so bail
-    out instead of corrupting the heap */}
-    if (result > bufsize) then
-    begin
-      dststr := ''; //free(buffer);
-      exit(UTF8PROC_ERROR_OVERFLOW);
-    end;
-    SetLength(dststr, Result);
-    exit(Result);
-  except
-    Result := UTF8PROC_ERROR_NOMEM;
-  end;
+  Result := utf8proc_map_custom(@str[1],strlen,@buffer,options,custom_func,custom_data);
+  if Result < 0 then
+    dststr := ''
+  else
+    dststr := PAnsiChar(buffer);
+  FreeMem(buffer);
 end;
 
 end.

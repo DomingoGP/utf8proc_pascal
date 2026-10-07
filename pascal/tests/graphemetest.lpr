@@ -190,7 +190,7 @@ begin
   end;
   Close(f);
   writeln('');
-  writeln('Passed tests after %zd lines!', lineno);
+  writeln('Passed tests after ',lineno, ' lines!');
   writeln('Performing regression tests...');
 
 
