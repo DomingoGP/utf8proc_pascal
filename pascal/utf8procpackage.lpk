@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <CONFIG>
-  <Package Version="5">
+  <Package Version="6">
     <PathDelim Value="\"/>
     <Name Value="utf8procpackage"/>
     <Type Value="RunTimeOnly"/>
@@ -9,7 +9,7 @@
       <Version Value="11"/>
       <PathDelim Value="\"/>
       <SearchPaths>
-        <UnitOutputDirectory Value="lib\$(TargetCPU)-$(TargetOS)\"/>
+        <UnitOutputDirectory Value="lib\$(TargetCPU)-$(TargetOS)"/>
       </SearchPaths>
     </CompilerOptions>
     <Description Value="Pascal port of utf8proc https://github.com/DomingoGP/utf8proc_pascal.
@@ -43,22 +43,21 @@ for downloads and other information, or the source code on github
  * DEALINGS IN THE SOFTWARE.
  */
 "/>
-    <Version Major="2" Minor="11"/>
-    <Files Count="2">
-      <Item1>
+    <Version Major="2" Minor="12"/>
+    <Files>
+      <Item>
         <Filename Value="utf8proc.pas"/>
         <UnitName Value="utf8proc"/>
-      </Item1>
-      <Item2>
+      </Item>
+      <Item>
         <Filename Value="utf8proc_data.inc"/>
         <Type Value="Include"/>
-      </Item2>
+      </Item>
     </Files>
-    <CompatibilityMode Value="True"/>
-    <RequiredPkgs Count="1">
-      <Item1>
+    <RequiredPkgs>
+      <Item>
         <PackageName Value="FCL"/>
-      </Item1>
+      </Item>
     </RequiredPkgs>
     <UsageOptions>
       <UnitPath Value="$(PkgOutDir)"/>
