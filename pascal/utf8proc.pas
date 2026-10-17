@@ -1703,12 +1703,21 @@ begin
           end;
         end;
       end
-      else if (((options and UTF8PROC_STRIPCC) <> 0) and ((uc < $0020) or ((uc >= $007F) and (uc < $00A0)))) then
+      else if ((options and UTF8PROC_STRIPCC) <> 0) and
+        {/* uc < 0 is a grapheme-break sentinel from UTF8PROC_CHARBOUND,
+           not a control character, so keep it */}
+        (((uc >= 0) and (uc < $0020)) or ((uc >= $007F) and (uc < $00A0))) then
       begin
         if (uc = $0009) then
         begin
           buffer[wpos] := $0020;
           Inc(wpos);
+        end
+           {/* a removed control character is a grapheme of its own, so also
+           drop the boundary sentinel that UTF8PROC_CHARBOUND put before it */}
+        else if (((options and UTF8PROC_CHARBOUND)<>0) and (wpos > 0) and (buffer[wpos-1] = -1)) then
+        begin
+          Dec(wPos);
         end;
       end
       else

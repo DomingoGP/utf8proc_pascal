@@ -33,6 +33,28 @@ var
   input356:AnsiString= #$65#$cc#$81#$78#$79#$00;
   output356:AnsiString= #$ff#$c3#$a9#$ff#$78#$ff#$79#$00;
   nfd356:AnsiString = #$ff#$65#$cc#$81#$ff#$78#$ff#$79#$00;
+  separate, combined: PAnsiChar;
+  separate_len, combined_len:  utf8proc_ssize_t;
+  i:size_t ;
+
+
+const
+  plain:array [0..3] of string = ('a bc', 'a b', 'ab', 'a');
+
+  //* Cover tabs, C1 controls, and a control before the first printable character. */
+  inputCC:array [0..3] of array [0..7] of ansichar = (
+      (#$61,#$0a,#$62,#$01,#$63,#$00, #0,#0),
+      (#$61,#$09,#$62,#$00, #0,#0,#0,#0),
+      (#$61,#$c2,#$90,#$62,#$00, #0,#0, #0),
+      (#$01,#$61,#$00, #0,#0, #0,#0,#0)
+  );
+  outputCC:array [0..3] of array [0..8] of ansichar = (
+      (#$ff,#$61,#$ff,#$20,#$ff,#$62,#$ff,#$63,#$00),
+      (#$ff,#$61,#$ff,#$20,#$ff,#$62,#$00, #0,#0),
+      (#$ff,#$61,#$ff,#$62,#$00, #0,#0, #0,#0),
+      (#$ff,#$61,#$00, #0,#0, #0,#0, #0,#0)
+  );
+
 
 
   function String2Hex ( const s: string ): string;
@@ -58,11 +80,12 @@ var
     utf8:array[0..1023] of AnsiChar;
     i,j:size_t ;
     glen,k:utf8proc_ssize_t;
-    g:PChar; {* utf8proc_map grapheme results *}
+    g:PAnsiChar; {* utf8proc_map grapheme results *}
     codepoint:utf8proc_int32_t;
     state,prev_codepoint:utf8proc_int32_t;
 //     size_t i := 0;
    expectbreak:boolean;
+
 begin
     bi := 0;
     si := 0;
@@ -221,6 +244,26 @@ begin
     check(strcomp(PAnsiChar(g),PAnsiChar(nfd356))=0, 'CHARBOUND|DECOMPOSE dropped grapheme markers',[]);
     utf8proc_free(g);
 
+    {/* UTF8PROC_STRIPCC must not strip the 0xff markers of UTF8PROC_CHARBOUND */}
+    for i := 0 to  sizeof(inputCC) div sizeof(inputCC[0]) -1 do
+    begin
+      glen := utf8proc_map(inputCC[i], 0, @g, UTF8PROC_NULLTERM or UTF8PROC_CHARBOUND or UTF8PROC_STRIPCC);
+      check(glen = strlen(PAnsiChar(outputCC[i])), 'CHARBOUND|STRIPCC returned wrong length in case %u',[i]);
+      check(0=strcomp(PAnsiChar(g), PAnsiChar(outputCC[i])), 'CHARBOUND|STRIPCC dropped grapheme markers in case %u', [i]);
+      utf8proc_free(g);
+      glen := utf8proc_map(inputCC[i], 0, @g, UTF8PROC_NULLTERM or UTF8PROC_STRIPCC);
+      check(glen = strlen(PAnsiChar(plain[i])), 'STRIPCC returned wrong length in case %u', [i]);
+      check(0=strcomp(PAnsiChar(g), PAnsiChar(plain[i])), 'STRIPCC changed outputCC in case %u', [i]);
+
+      separate_len := utf8proc_map(g, 0, @separate, UTF8PROC_NULLTERM or UTF8PROC_CHARBOUND);
+      combined_len := utf8proc_map(inputCC[i], 0, @combined, UTF8PROC_NULLTERM or UTF8PROC_CHARBOUND or UTF8PROC_STRIPCC);
+      check((separate_len >= 0) and (combined_len >= 0), 'two-step mapping failed in case %u', [i]);
+      check(separate_len = combined_len, 'two-step mapping returned different length in case %u', [i]);
+      check(CompareMem(@separate[0], @combined[0], combined_len + 1), 'two-step mapping differs from combined flags in case %u', [i]);
+      utf8proc_free(separate);
+      utf8proc_free(combined);
+      utf8proc_free(g);
+    end;
 
     {* https://github.com/JuliaLang/julia/issues/37680 *}
     checkline('/ 1f1f8 1f1ea / 1f1f8 1f1ea /', true); {* Two swedish flags after each other *}
